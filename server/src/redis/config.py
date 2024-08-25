@@ -20,3 +20,15 @@ class Redis:
             self.connection_url, db=0
         )
         return self.connection
+
+    async def set_json_data(self, key: str, value: dict):
+        """Set a JSON-encoded value in Redis"""
+        json_data = json.dumps(value)  # Serialize dictionary to JSON string
+        await self.connection.set(key, json_data)
+
+    async def get_json_data(self, key: str):
+        """Get a JSON-encoded value from Redis"""
+        raw_data = await self.connection.get(key)
+        if raw_data:
+            return json.loads(raw_data)  # Deserialize JSON string to dictionary
+        return None
