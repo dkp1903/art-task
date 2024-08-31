@@ -4,7 +4,7 @@ export function generateToken() {
   }
   
   export function connectWebSocket(token: string) {
-    const ws = new WebSocket(`wss://your-server-url/chat?token=${token}`);
+    const ws = new WebSocket(`wss://3500-dkp1903-arttask-a8mfnahxlkg.ws-us115.gitpod.io?token=${token}`);
   
     ws.onopen = () => {
       console.log('Connected to WebSocket');

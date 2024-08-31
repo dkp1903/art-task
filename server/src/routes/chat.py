@@ -40,6 +40,7 @@ async def token_generator(name: str, request: Request):
     redis_client = await redis.create_connection()
     await redis_client.set(str(token), json.dumps(chat_session.dict()))  # Serialize dict to JSON string
 
+    print("Chat sesh created")
     # Set a timeout for Redis data
     await redis_client.expire(str(token), 3600)
 
@@ -67,7 +68,8 @@ async def refresh_token(request: Request, token: str):
 # @access  Public
 
 @chat.websocket("/chat")
-async def websocket_endpoint(websocket: WebSocket, token: str = "577948ea-123b-4536-b68a-b47cca936071"):
+async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_token)):
+    print("Init connection")
     await manager.connect(websocket)
     redis_client = await redis.create_connection()
     print("Connection created")
