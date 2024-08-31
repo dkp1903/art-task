@@ -141,35 +141,34 @@ const Chat = () => {
           <div className="mb-4">
             {messages.map((msg) => (
               <div
-                key={msg.id}
-                className={`flex items-start mb-2 ${msg.sender === 'user' ? 'justify-end' : ''}`}
-              >
-                <div className="relative">
-                  {msg.sender === 'bot' && (
-                    <img
-                      src="https://i.ibb.co/mD94qxS/ava.png" // Replace with the actual avatar image source
-                      alt="Avatar"
-                      className="w-8 h-8 rounded-full mr-3"
-                    />
-                  )}
-                  <div
-                    className={`p-3 rounded-lg ${
-                      msg.sender === 'user' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
+              key={msg.id}
+              className={`flex items-start mb-2 ${msg.sender === 'user' ? 'justify-end' : ''}`}
+            >
+              <div className="relative max-w-xs">
+                {msg.sender === 'bot' && (
+                  <img
+                    src="/avatar.png" // Replace with the actual avatar image source
+                    alt="Avatar"
+                    className="w-8 h-8 rounded-full mr-3"
+                  />
+                )}
+                <div
+                  className={`p-3 rounded-lg ${
+                    msg.sender === 'user' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <p className="mb-2">{msg.content}</p>
                   {msg.sender === 'user' && (
-                    <div className="absolute right-0 top-0 mt-1 mr-1 flex space-x-1">
+                    <div className="flex space-x-2 mt-1">
                       <button
                         onClick={() => handleEditMessage(msg.id)}
-                        className="text-xs text-blue-500 hover:underline"
+                        className="px-2 py-1 bg-white text-purple-500 rounded-full text-xs font-medium hover:bg-gray-200"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteMessage(msg.id)}
-                        className="text-xs text-red-500 hover:underline"
+                        className="px-2 py-1 bg-white text-purple-500 rounded-full text-xs font-medium hover:bg-gray-200"
                       >
                         Delete
                       </button>
@@ -177,6 +176,7 @@ const Chat = () => {
                   )}
                 </div>
               </div>
+            </div>
             ))}
           </div>
 

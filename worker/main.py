@@ -50,6 +50,8 @@ async def main():
                     input = ["" + i['msg'] for i in message_data]
                     input = " ".join(input)
 
+                    print("Input : ", input)
+
                     res = GPT().query(input=input)
 
                     msg = Message(
