@@ -50,8 +50,7 @@ async def token_generator(name: str, request: Request):
 
 @chat.get("/refresh_token")
 async def refresh_token(request: Request, token: str):
-    json_client = redis.create_rejson_connection()
-    cache = Cache(json_client)
+    cache = Cache(redis)
     data = await cache.get_chat_history(token)
 
     if data == None:
@@ -68,12 +67,14 @@ async def refresh_token(request: Request, token: str):
 @chat.websocket("/chat")
 async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_token)):
     await manager.connect(websocket)
-    redis_client = await redis.create_connection()
+    #redis_client = await redis.create_connection()
+    print("Connection created")
     producer = Producer(redis_client)
     consumer = StreamConsumer(redis_client)
 
     try:
         while True:
+            print("Start")
             data = await websocket.receive_text()
             print("Websocket response : ", data)
             stream_data = {}

@@ -18,8 +18,8 @@ class Redis:
     async def create_connection(self):
         print("Url : ", self.connection_url)
         self.connection = redis.from_url(
-            self.connection_url, db=0
-        )
+            self.connection_url)
+        print(self.connection)
         return self.connection
 
     async def set_json_data(self, key: str, value: dict):
