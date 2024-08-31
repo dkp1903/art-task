@@ -21,6 +21,8 @@ redis = Redis()
 @chat.post("/token")
 async def token_generator(name: str, request: Request):
 
+    print("Create token Init")
+
     if name == "":
         raise HTTPException(status_code=400, detail={
             "loc": "name",  "msg": "Enter a valid name"})
@@ -65,9 +67,9 @@ async def refresh_token(request: Request, token: str):
 # @access  Public
 
 @chat.websocket("/chat")
-async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_token)):
+async def websocket_endpoint(websocket: WebSocket, token: str = "577948ea-123b-4536-b68a-b47cca936071"):
     await manager.connect(websocket)
-    #redis_client = await redis.create_connection()
+    redis_client = await redis.create_connection()
     print("Connection created")
     producer = Producer(redis_client)
     consumer = StreamConsumer(redis_client)

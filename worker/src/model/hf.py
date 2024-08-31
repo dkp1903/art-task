@@ -8,6 +8,7 @@ load_dotenv()
 class GPT:
     def __init__(self):
         self.url = os.environ.get('MODEL_URL')
+        print("token :", os.environ.get('HUGGINFACE_INFERENCE_TOKEN'))
         self.headers = {
             "Authorization": f"Bearer {os.environ.get('HUGGINFACE_INFERENCE_TOKEN')}",
             "Content-Type": "application/json"}
