@@ -147,7 +147,7 @@ const Chat = () => {
                 <div className="relative">
                   {msg.sender === 'bot' && (
                     <img
-                      src="/avatar.png" // Replace with the actual avatar image source
+                      src="https://i.ibb.co/mD94qxS/ava.png" // Replace with the actual avatar image source
                       alt="Avatar"
                       className="w-8 h-8 rounded-full mr-3"
                     />

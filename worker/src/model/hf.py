@@ -30,9 +30,9 @@ class GPT:
         data = json.loads(response.content.decode("utf-8"))
         print("Model Query Response : ", data)
         text = data[0]['generated_text']
-        res = str(text.split("Human:")[0]).strip("\n").strip()
-        print("Model Query Response split : ", res)
-        return res
+        # res = str(text.split("Human:")[0]).strip("\n").strip()
+        # print("Model Query Response split : ", res)
+        return text
 
 
 if __name__ == "__main__":
