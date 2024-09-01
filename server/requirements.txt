@@ -8,3 +8,4 @@ redis
 setuptools
 pytest
 httpx
+pydantic

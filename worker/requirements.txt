@@ -2,3 +2,6 @@ aiohttp
 redis
 python-dotenv
 requests
+pytest
+httpx
+pydantic
