@@ -6,7 +6,7 @@ services:
     startCommand: "cd server && python main.py"
     plan: free
 
-  - type: worker
+  - type: web
     name: worker
     runtime: python
     buildCommand: "cd worker && pip install -r requirements.txt"
