@@ -6,3 +6,5 @@ WebSockets
 python-dotenv
 redis
 setuptools
+pytest
+httpx

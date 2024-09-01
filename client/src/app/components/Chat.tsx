@@ -1,9 +1,9 @@
-// components/Chat.tsx
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import { v4 as uuid4 } from 'uuid';
 
 interface Message {
-  id: number;
+  id: string; // Changed to string to match UUID type
   content: string;
   editable: boolean;
   sender: 'user' | 'bot';
@@ -14,9 +14,9 @@ const Chat = () => {
   const [token, setToken] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null); // Changed to string
   const wsRef = useRef<WebSocket | null>(null);
-  const [context, setContext] = useState('Onboarding'); // Add this line
+  const [context, setContext] = useState('Onboarding');
 
   const handleNameSubmit = async () => {
     try {
@@ -32,6 +32,7 @@ const Chat = () => {
       // Handle incoming messages from the server
       wsRef.current.onmessage = (event) => {
         try {
+
           console.log("data : ", event.data);
           const rawData = event.data
             .replace(/^'{/, '{') // Strip leading single quote and opening curly brace
@@ -41,8 +42,11 @@ const Chat = () => {
           // Parse the cleaned string as JSON
           const parsedData = JSON.parse(rawData);
           const message = parsedData.msg; // Extract the `msg` field
+
+        
+
           const newMessage: Message = {
-            id: Date.now(), // Use timestamp or unique id as needed
+            id: parsedData.id || uuid4(), // Use uuid for ID
             content: message,
             editable: false,
             sender: 'bot',
@@ -79,7 +83,7 @@ const Chat = () => {
       setEditingId(null);
     } else {
       const newMessage: Message = {
-        id: Date.now(),
+        id: uuid4(),
         content: input,
         editable: false,
         sender: 'user',
@@ -95,7 +99,7 @@ const Chat = () => {
     setInput('');
   };
 
-  const handleEditMessage = (id: number) => {
+  const handleEditMessage = (id: string) => { // Changed to string
     const message = messages.find((msg) => msg.id === id);
     if (message) {
       setInput(message.content);
@@ -103,7 +107,7 @@ const Chat = () => {
     }
   };
 
-  const handleDeleteMessage = (id: number) => {
+  const handleDeleteMessage = (id: string) => { // Changed to string
     setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== id));
   };
 
@@ -116,7 +120,7 @@ const Chat = () => {
   // New handlers for the buttons
   const handleCreateReport = () => {
     const newMessage: Message = {
-      id: Date.now(),
+      id: uuid4(),
       content: "Let's create a report for this month.",
       editable: false,
       sender: 'user',
@@ -127,7 +131,7 @@ const Chat = () => {
 
   const handleCallLead = () => {
     const newMessage: Message = {
-      id: Date.now(),
+      id: uuid4(),
       content: "Let's schedule a call with the lead.",
       editable: false,
       sender: 'user',
@@ -146,7 +150,7 @@ const Chat = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900 placeholder-gray-500"
           />
           <button
             onClick={handleNameSubmit}
@@ -163,14 +167,14 @@ const Chat = () => {
               alt="Avatar"
               className="w-12 h-12 rounded-full mx-auto"
             />
-            <h2 className="text-lg font-semibold mt-2">Hey👋, I’m Ava</h2>
+            <h2 className="text-lg font-semibold mt-2 text-gray-900">Hey👋, I’m Ava</h2>
             <p className="text-gray-600">Ask me anything or pick a place to start</p>
           </div>
 
           <div className="mb-4">
-            {messages.map((msg) => (
+            {messages.map((msg, index) => (
               <div
-                key={msg.id}
+                key={`${msg.id}-${index}`}
                 className={`flex items-start mb-2 ${msg.sender === 'user' ? 'justify-end' : ''}`}
               >
                 <div className="relative max-w-xs">
@@ -230,7 +234,7 @@ const Chat = () => {
               placeholder="Your question"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900" // Updated text color
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900"
             />
             <button
               onClick={handleSendMessage}
@@ -243,8 +247,8 @@ const Chat = () => {
           <div className="mt-4">
             <select
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900"
-              value={context} // Bind select to context state
-              onChange={handleContextChange} // Attach handler for context changes
+              value={context}
+              onChange={handleContextChange}
             >
               <option value="Onboarding">Onboarding</option>
               <option value="Support">Support</option>

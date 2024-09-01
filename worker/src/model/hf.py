@@ -24,6 +24,7 @@ class GPT:
 
     def query(self, input: str) -> list:
         self.payload["inputs"] = input # f"Human: {input} Bot:"
+        print("Model Input : ", input)
         data = json.dumps(self.payload)
         response = requests.request(
             "POST", self.url, headers=self.headers, data=data)

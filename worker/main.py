@@ -7,6 +7,7 @@ from src.redis.stream import StreamConsumer
 import os
 from src.schema.chat import Message
 from src.redis.producer import Producer
+import re
 
 
 # redis = Redis()
@@ -49,11 +50,13 @@ async def main():
 
                     input = ["" + i['msg'] for i in message_data]
                     input = " ".join(input)
+                    print("Message : ", message)
+                    input = message
 
                     print("Input : ", input)
 
                     res = GPT().query(input=input)
-
+                    res = re.sub(r'[^\w\s]', '', res)
                     msg = Message(
                         msg=res
                     )
