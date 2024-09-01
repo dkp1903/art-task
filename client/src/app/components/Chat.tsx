@@ -20,14 +20,14 @@ const Chat = () => {
 
   const handleNameSubmit = async () => {
     try {
-      const response = await axios.post('https://3500-dkp1903-arttask-a8mfnahxlkg.ws-us115.gitpod.io/token', null, {
+      const response = await axios.post('https://3500-dkp1903-arttask-imbornlwndw.ws-us115.gitpod.io/token', null, {
         params: { name }
       });
       const receivedToken = response.data.token;
       setToken(receivedToken);
 
       // Establish WebSocket connection
-      wsRef.current = new WebSocket(`wss://3500-dkp1903-arttask-a8mfnahxlkg.ws-us115.gitpod.io/chat?token=${receivedToken}`);
+      wsRef.current = new WebSocket(`wss://3500-dkp1903-arttask-imbornlwndw.ws-us115.gitpod.io/chat?token=${receivedToken}`);
 
       // Handle incoming messages from the server
       wsRef.current.onmessage = (event) => {
@@ -140,7 +140,7 @@ const Chat = () => {
     <div className="max-w-md mx-auto my-8 p-4 bg-white rounded-lg shadow-md">
       {!token ? (
         <div>
-          <h2 className="text-lg font-semibold mb-4">Enter your name to start chatting</h2>
+          <h2 className="text-lg font-semibold mb-4 text-gray-900">Enter your name to start chatting</h2>
           <input
             type="text"
             value={name}
