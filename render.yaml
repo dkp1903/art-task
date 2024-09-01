@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: server
+    runtime: python
+    buildCommand: "cd server && pip install -r requirements.txt"
+    startCommand: "cd server && python main.py"
+    plan: free
+
+  - type: worker
+    name: worker
+    runtime: python
+    buildCommand: "cd worker && pip install -r requirements.txt"
+    startCommand: "cd worker && python main.py"
+    plan: free
