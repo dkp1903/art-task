@@ -20,14 +20,16 @@ const Chat = () => {
 
   const handleNameSubmit = async () => {
     try {
-      const response = await axios.post('https://3500-dkp1903-arttask-imbornlwndw.ws-us115.gitpod.io/token', null, {
+      const serverUrl = process.env.SERVER_URL || 'https://server-b3n6.onrender.com/token';
+      const chatUrl = process.env.CHAT_URL || 'wss://server-b3n6.onrender.com/chat?token=';
+      const response = await axios.post(serverUrl, null, {
         params: { name }
       });
       const receivedToken = response.data.token;
       setToken(receivedToken);
 
       // Establish WebSocket connection
-      wsRef.current = new WebSocket(`wss://3500-dkp1903-arttask-imbornlwndw.ws-us115.gitpod.io/chat?token=${receivedToken}`);
+      wsRef.current = new WebSocket(`${chatUrl}${receivedToken}`);
 
       // Handle incoming messages from the server
       wsRef.current.onmessage = (event) => {
