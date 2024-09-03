@@ -7,7 +7,7 @@ from src.redis.cache import Cache
 from src.redis.stream import StreamConsumer
 from src.redis.producer import Producer
 import re
-from routes import include_router
+from routes import router
 from src.schema.chat import Message
 
 app = FastAPI()
