@@ -23,7 +23,7 @@ const Chat = () => {
       setToken(receivedToken);
 
       // Establish WebSocket connection
-      const chatUrl = 'wss://3500-dkp1903-arttask-imbornlwndw.ws-us116.gitpod.io/chat?token=';
+      const chatUrl = process.env.CHAT_URL || 'wss://server-b3n6.onrender.com/chat?token=';
       wsRef.current = new WebSocket(`${chatUrl}${receivedToken}`);
       wsRef.current.onmessage = (event) => handleWebSocketMessage(event.data);
       wsRef.current.onerror = (error) => console.error('WebSocket error:', error);
