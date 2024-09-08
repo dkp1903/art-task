@@ -51,12 +51,7 @@ const Chat = () => {
   const handleSendMessage = () => {
     if (input.trim() === '') return;
     if (editingId !== null) {
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === editingId ? { ...msg, content: input, editable: false } : msg
-        )
-      );
-      setEditingId(null);
+      submitEditMessage();
     } else {
       const newMessage: Message = {
         id: uuid4(),
@@ -64,21 +59,28 @@ const Chat = () => {
         editable: false,
         sender: 'user',
       };
+      console.log("NMI : ", newMessage.id);
       setMessages([...messages, newMessage]);
-      sendMessageViaWebSocket(wsRef.current, input);
+      sendMessageViaWebSocket(wsRef.current, JSON.stringify({ action: 'send', content: input }));
+      setInput('');
     }
-    setInput('');
   };
 
   const handleButtonAction = (actionMessage: string) => {
+    console.log("Handle button action")
+    const actionMessageObject = {
+      action: "send",
+      content: actionMessage
+    };
     const userMessage: Message = {
       id: uuid4(),
       content: actionMessage,
       editable: false,
       sender: 'user',
     };
+    console.log("Action Message Object: ", JSON.stringify(actionMessageObject));
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-    sendMessageViaWebSocket(wsRef.current, actionMessage);
+    sendMessageViaWebSocket(wsRef.current, JSON.stringify(actionMessageObject));
   };
 
   const handleEditMessage = (id: string) => {
@@ -89,7 +91,36 @@ const Chat = () => {
     }
   };
 
+  const submitEditMessage = () => {
+    if (editingId !== null) {
+      const editedMessage = messages.find(msg => msg.id === editingId);
+      if (editedMessage) {
+        const messageData = {
+          action: 'edit',
+          id: editingId,
+          content: input
+        };
+        sendMessageViaWebSocket(wsRef.current, JSON.stringify(messageData));
+
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.id === editingId ? { ...msg, content: input, editable: false } : msg
+          )
+        );
+        setEditingId(null);
+        setInput('');
+      }
+    }
+  };
+
   const handleDeleteMessage = (id: string) => {
+    const messageData = {
+      action: 'delete',
+      id: id
+    };
+    sendMessageViaWebSocket(wsRef.current, JSON.stringify(messageData));
+  
+    // Remove the message locally
     setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== id));
   };
 
