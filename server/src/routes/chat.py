@@ -1,17 +1,24 @@
 import os
-from fastapi import APIRouter, FastAPI, WebSocket, Request, BackgroundTasks, HTTPException, Depends
 import uuid
+import json
+import logging
+from datetime import datetime
+from fastapi import APIRouter, WebSocket, Request, HTTPException, Depends
+from fastapi.websockets import WebSocketDisconnect
+from pydantic import BaseModel
 from ..socket.connection import ConnectionManager
 from ..socket.utils import get_token
 from ..redis.producer import Producer
 from ..redis.config import Redis
 from ..redis.stream import StreamConsumer
-from ..schema.chat import Chat
-import json
 from ..redis.cache import Cache
-import uuid
-from datetime import datetime
-from pydantic import BaseModel
+from ..schema.chat import Chat
+
+# Set up logging
+logging.basicConfig(
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    level=logging.INFO,
+)
 
 chat = APIRouter()
 manager = ConnectionManager()
@@ -23,12 +30,13 @@ redis = Redis()
 
 @chat.post("/token")
 async def token_generator(name: str, request: Request):
+    logging.info("Token generation initiated")
 
-    print("Create token Init")
-
-    if name == "":
+    if not name:
+        logging.warning("Invalid name provided")
         raise HTTPException(status_code=400, detail={
-            "loc": "name",  "msg": "Enter a valid name"})
+            "loc": "name", "msg": "Enter a valid name"
+        })
 
     token = str(uuid.uuid4())
 
@@ -37,15 +45,18 @@ async def token_generator(name: str, request: Request):
         messages=[],
         name=name
     )
-    print("Routes/Chat : ", chat_session.dict())
 
-    # Store chat session in Redis JSON with the token as key
-    redis_client = await redis.create_connection()
-    await redis_client.set(str(token), json.dumps(chat_session.dict()))  # Serialize dict to JSON string
+    logging.info(f"Generated chat session: {chat_session.dict()}")
 
-    print("Chat sesh created")
-    # Set a timeout for Redis data
-    await redis_client.expire(str(token), 3600)
+    # Store chat session in Redis
+    try:
+        redis_client = await redis.create_connection()
+        await redis_client.set(token, json.dumps(chat_session.dict()))
+        await redis_client.expire(token, 3600)
+        logging.info(f"Chat session stored in Redis with token {token}")
+    except Exception as e:
+        logging.error(f"Error storing chat session in Redis: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to create session")
 
     return chat_session.dict()
 
@@ -56,14 +67,17 @@ async def token_generator(name: str, request: Request):
 
 @chat.get("/refresh_token")
 async def refresh_token(request: Request, token: str):
+    logging.info(f"Refreshing token: {token}")
+    
     cache = Cache(redis)
     data = await cache.get_chat_history(token)
 
-    if data == None:
-        raise HTTPException(
-            status_code=400, detail="Session expired or does not exist")
-    else:
-        return data
+    if not data:
+        logging.warning(f"Token {token} not found or session expired")
+        raise HTTPException(status_code=400, detail="Session expired or does not exist")
+
+    logging.info(f"Session data retrieved for token: {token}")
+    return data
 
 
 # @route   Websocket /chat
@@ -72,51 +86,70 @@ async def refresh_token(request: Request, token: str):
 
 @chat.websocket("/chat")
 async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_token)):
-    print("Init connection")
+    logging.info(f"WebSocket connection initialized for token: {token}")
+
     await manager.connect(websocket)
     redis_client = await redis.create_connection()
-    print("Connection created")
-
     producer = Producer(redis_client)
-
     consumer = StreamConsumer(redis_client)
+    cache = Cache(redis_client)
+
+    logging.info("WebSocket connection established, listening for messages")
+
     await consumer.reset_stream("response_channel")
 
     try:
         while True:
+            logging.info("Listening")
             data = await websocket.receive_text()
-            print("Received Message : ", data)
+            logging.info(f"Received message: {data}")
 
-            stream_data = {}
-            print("Received Token : ", token)
-            stream_data[token] = data
-            await producer.add_to_stream(stream_data, "message_channel")
+            data = json.loads(data)
+
+            action = data.get("action")
+
+            if action == "send":
+                stream_data = {token: data['content']}
+                await producer.add_to_stream(stream_data, "message_channel")
+
+            elif action == "edit":
+                message_id = data.get("id")
+                new_content = data.get("content")
+                print("Content : ", data.get("content"))
+                stream_data = {token: data['content']}
+                # Logic to edit message in Redis
+                await cache.update_message_in_cache(token=token, message_id=message_id, new_content=new_content)
+                print("EDIT complete")
+                # Send acknowledgment
+                # await manager.send_personal_message(
+                #     json.dumps({"status": "success", "action": "edit", "id": message_id}), websocket)
+                await producer.add_to_stream(stream_data, "message_channel")
+
+            elif action == "delete":
+                message_id = data.get("id")
+                stream_data = {token: 'Message Deleted'}
+                await cache.delete_message_from_cache(token=token, message_id=message_id)
+                await producer.add_to_stream(stream_data, "message_channel")
+
             response = await consumer.consume_stream(stream_channel="response_channel", block=0)
-
-            print("Response : ", response)
-
-            print("Printing all")
-    
-            await consumer.print_all_messages("response_channel")
+            logging.info(f"Received response from stream: {response}")
 
             for stream, messages in response:
                 for message in messages:
-                    response_token = [k.decode('utf-8')
-                                      for k, v in message[1].items()][0]
-                    print("Token : ", token)
-                    print ("Response Token : ", response_token)
+                    response_token = [k.decode('utf-8') for k, v in message[1].items()][0]
+
                     if token == response_token:
-                        response_message = [v.decode('utf-8')
-                                            for k, v in message[1].items()][0]
-
-                        print(message[0].decode('utf-8'))
-                        print(token)
-                        print(response_token)
-
+                        response_message = [v.decode('utf-8') for k, v in message[1].items()][0]
+                        logging.info(f"Sending message to client: {response_message}")
                         await manager.send_personal_message(response_message, websocket)
+                        await producer.add_to_stream(stream_data, "message_channel")
 
+                    logging.info(f"Deleting message with ID: {message[0].decode('utf-8')}")
                     await consumer.delete_message(stream_channel="response_channel", message_id=message[0].decode('utf-8'))
 
-            
     except WebSocketDisconnect:
+        logging.info("WebSocket disconnected")
         manager.disconnect(websocket)
+
+    except Exception as e:
+        logging.error(f"Error during WebSocket handling: {e}", exc_info=True)
