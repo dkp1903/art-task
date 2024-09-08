@@ -21,11 +21,6 @@ redis = Redis()
 # @desc    Route generating chat token
 # @access  Public
 
-class Message(BaseModel):
-    id: str = str(uuid.uuid4())  # Ensure the ID is a string
-    msg: str
-    timestamp: str = str(datetime.now())
-
 @chat.post("/token")
 async def token_generator(name: str, request: Request):
 
@@ -81,8 +76,11 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_toke
     await manager.connect(websocket)
     redis_client = await redis.create_connection()
     print("Connection created")
+
     producer = Producer(redis_client)
+
     consumer = StreamConsumer(redis_client)
+    await consumer.reset_stream("response_channel")
 
     try:
         while True:
@@ -97,21 +95,25 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_toke
 
             print("Response : ", response)
 
+            print("Printing all")
+    
+            await consumer.print_all_messages("response_channel")
+
             for stream, messages in response:
                 for message in messages:
                     response_token = [k.decode('utf-8')
                                       for k, v in message[1].items()][0]
                     print("Token : ", token)
                     print ("Response Token : ", response_token)
-                    # if token == response_token:
-                    response_message = [v.decode('utf-8')
-                                        for k, v in message[1].items()][0]
+                    if token == response_token:
+                        response_message = [v.decode('utf-8')
+                                            for k, v in message[1].items()][0]
 
-                    print(message[0].decode('utf-8'))
-                    print(token)
-                    print(response_token)
+                        print(message[0].decode('utf-8'))
+                        print(token)
+                        print(response_token)
 
-                    await manager.send_personal_message(response_message, websocket)
+                        await manager.send_personal_message(response_message, websocket)
 
                     await consumer.delete_message(stream_channel="response_channel", message_id=message[0].decode('utf-8'))
 
