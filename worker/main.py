@@ -57,7 +57,7 @@ async def worker_main():
 
                     stream_data = {}
                     stream_data[str(token)] = str(msg.dict())
-
+                    print(f"Stream Data : {stream_data} for token {token} and token {str(token)}")
                     await producer.add_to_stream(stream_data, "response_channel")
                     await cache.add_message_to_cache(token=token, source="bot", message_data=msg.dict())
 
