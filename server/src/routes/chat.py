@@ -103,7 +103,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_toke
             logging.info("Listening")
             data = await websocket.receive_text()
             logging.info(f"Received message: {data}")
-
             data = json.loads(data)
 
             action = data.get("action")
