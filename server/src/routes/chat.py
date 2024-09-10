@@ -92,6 +92,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_toke
     redis_client = await redis.create_connection()
     producer = Producer(redis_client)
     consumer = StreamConsumer(redis_client)
+    cache = Cache(redis_client)
 
     logging.info("WebSocket connection established, listening for messages")
 
@@ -99,12 +100,35 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_toke
 
     try:
         while True:
+            logging.info("Listening")
             data = await websocket.receive_text()
             logging.info(f"Received message: {data}")
+            data = json.loads(data)
 
-            stream_data = {token: data}
-            logging.info(f"Streaming data to Redis: {stream_data}")
-            await producer.add_to_stream(stream_data, "message_channel")
+            action = data.get("action")
+
+            if action == "send":
+                stream_data = {token: data['content']}
+                await producer.add_to_stream(stream_data, "message_channel")
+
+            elif action == "edit":
+                message_id = data.get("id")
+                new_content = data.get("content")
+                print("Content : ", data.get("content"))
+                stream_data = {token: data['content']}
+                # Logic to edit message in Redis
+                await cache.update_message_in_cache(token=token, message_id=message_id, new_content=new_content)
+                print("EDIT complete")
+                # Send acknowledgment
+                # await manager.send_personal_message(
+                #     json.dumps({"status": "success", "action": "edit", "id": message_id}), websocket)
+                await producer.add_to_stream(stream_data, "message_channel")
+
+            elif action == "delete":
+                message_id = data.get("id")
+                stream_data = {token: 'Message Deleted'}
+                await cache.delete_message_from_cache(token=token, message_id=message_id)
+                await producer.add_to_stream(stream_data, "message_channel")
 
             response = await consumer.consume_stream(stream_channel="response_channel", block=0)
             logging.info(f"Received response from stream: {response}")
@@ -117,6 +141,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_toke
                         response_message = [v.decode('utf-8') for k, v in message[1].items()][0]
                         logging.info(f"Sending message to client: {response_message}")
                         await manager.send_personal_message(response_message, websocket)
+                        await producer.add_to_stream(stream_data, "message_channel")
 
                     logging.info(f"Deleting message with ID: {message[0].decode('utf-8')}")
                     await consumer.delete_message(stream_channel="response_channel", message_id=message[0].decode('utf-8'))
