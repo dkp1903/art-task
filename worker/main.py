@@ -58,8 +58,11 @@ async def worker_main():
 
                         logging.info(f"Sending input to GPT: {input_text}")
 
-                        # Query GPT model
-                        res = GPT().query(input=input_text)
+                        if input_text == 'Message Deleted':
+                            res=input_text
+                        else:
+                            # Query GPT model
+                            res = GPT().query(input=input_text)
                         res = re.sub(r'[^\w\s]', '', res)
                         msg = Message(msg=res)
 
