@@ -103,7 +103,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_toke
             logging.info("Listening")
             data = await websocket.receive_text()
             logging.info(f"Received message: {data}")
-
             data = json.loads(data)
 
             action = data.get("action")
@@ -142,7 +141,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Depends(get_toke
                         response_message = [v.decode('utf-8') for k, v in message[1].items()][0]
                         logging.info(f"Sending message to client: {response_message}")
                         await manager.send_personal_message(response_message, websocket)
-                        await producer.add_to_stream(stream_data, "message_channel")
+                        # await producer.add_to_stream(stream_data, "message_channel")
 
                     logging.info(f"Deleting message with ID: {message[0].decode('utf-8')}")
                     await consumer.delete_message(stream_channel="response_channel", message_id=message[0].decode('utf-8'))

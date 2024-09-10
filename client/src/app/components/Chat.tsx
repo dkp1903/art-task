@@ -67,15 +67,20 @@ const Chat = () => {
   };
 
   const handleButtonAction = (actionMessage: string) => {
+    console.log("Handle button action")
+    const actionMessageObject = {
+      action: "send",
+      content: actionMessage
+    };
     const userMessage: Message = {
       id: uuid4(),
       content: actionMessage,
       editable: false,
       sender: 'user',
     };
-    console.log("NMI BA : ", userMessage);
+    console.log("Action Message Object: ", JSON.stringify(actionMessageObject));
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-    sendMessageViaWebSocket(wsRef.current, actionMessage);
+    sendMessageViaWebSocket(wsRef.current, JSON.stringify(actionMessageObject));
   };
 
   const handleEditMessage = (id: string) => {
